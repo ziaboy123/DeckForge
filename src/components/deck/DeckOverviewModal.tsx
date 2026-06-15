@@ -5,7 +5,30 @@ import { Modal } from "@/components/ui/Modal";
 import { CardTooltip } from "@/components/cards/CardTooltip";
 import { getCardImageUrl } from "@/lib/ygoprodeck";
 import { cn } from "@/lib/utils";
-import type { YgoCard, DeckEntry } from "@/types/yugioh";
+import type { YgoCard, DeckEntry, FrameType } from "@/types/yugioh";
+
+function cardTypeOrder(frameType: FrameType): number {
+  const order: Partial<Record<FrameType, number>> = {
+    normal: 0,
+    effect: 1,
+    ritual: 2,
+    normal_pendulum: 10,
+    effect_pendulum: 11,
+    ritual_pendulum: 12,
+    fusion: 20,
+    fusion_pendulum: 21,
+    synchro: 30,
+    synchro_pendulum: 31,
+    xyz: 40,
+    xyz_pendulum: 41,
+    link: 50,
+    token: 60,
+    skill: 70,
+    spell: 100,
+    trap: 200,
+  };
+  return order[frameType] ?? 5;
+}
 
 interface Props {
   open: boolean;
@@ -30,8 +53,15 @@ interface SectionProps {
 function Section({ title, entries, cards, max, countClass, borderClass, bgClass }: SectionProps) {
   const total = entries.reduce((s, e) => s + e.quantity, 0);
 
+  const sortedEntries = [...entries].sort((a, b) => {
+    const ca = cards.get(a.cardId);
+    const cb = cards.get(b.cardId);
+    if (!ca || !cb) return 0;
+    return cardTypeOrder(ca.frameType) - cardTypeOrder(cb.frameType);
+  });
+
   const expanded: Array<{ card: YgoCard; key: string }> = [];
-  entries.forEach((entry) => {
+  sortedEntries.forEach((entry) => {
     const card = cards.get(entry.cardId);
     if (!card) return;
     for (let i = 0; i < entry.quantity; i++) {
