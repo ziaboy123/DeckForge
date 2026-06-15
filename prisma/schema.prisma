@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── NextAuth required tables ───────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  decks    Deck[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── Deck ────────────────────────────────────────────────────────────────────
+
+enum DeckFormat {
+  ADVANCED
+  TRADITIONAL
+  SPEED_DUEL
+  RUSH_DUEL
+}
+
+model Deck {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  format      DeckFormat @default(ADVANCED)
+  isPublic    Boolean    @default(false)
+  thumbnail   String?
+  userId      String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards DeckCard[]
+
+  @@map("decks")
+}
+
+enum DeckZone {
+  MAIN
+  EXTRA
+  SIDE
+}
+
+model DeckCard {
+  id        String   @id @default(cuid())
+  deckId    String
+  cardId    Int
+  zone      DeckZone @default(MAIN)
+  quantity  Int      @default(1)
+  sortOrder Int      @default(0)
+
+  deck Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@map("deck_cards")
+}
+
+// ─── Card cache ──────────────────────────────────────────────────────────────
+
+model CardCache {
+  id           Int      @id
+  name         String
+  type         String
+  frameType    String
+  description  String   @db.Text
+  race         String
+  attribute    String?
+  level        Int?
+  atk          Int?
+  def          Int?
+  linkval      Int?
+  archetype    String?
+  banStatusTcg String?
+  banStatusOcg String?
+  imageUrl     String
+  imageSmall   String
+  data         Json
+  cachedAt     DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([name])
+  @@index([archetype])
+  @@index([type])
+  @@index([frameType])
+  @@map("card_cache")
+}

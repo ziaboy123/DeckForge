@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg-base: #080b12;
+  --color-bg-surface: #0f1420;
+  --color-bg-card: #151c2e;
+  --color-bg-elevated: #1e2740;
+  --color-border: #2a3554;
+  --color-border-subtle: #1e2a45;
+  --color-accent-gold: #f0c040;
+  --color-accent-blue: #3b82f6;
+  --color-text-primary: #e8eaf0;
+  --color-text-secondary: #8892a4;
+  --color-text-muted: #5a6478;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-bg-base);
+    color: var(--color-text-primary);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-bg-surface);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-subtle);
+  }
+}
+
+@layer components {
+  .card-frame-normal { @apply bg-amber-200 text-amber-900; }
+  .card-frame-effect { @apply bg-orange-500 text-white; }
+  .card-frame-ritual { @apply bg-blue-300 text-blue-900; }
+  .card-frame-fusion { @apply bg-violet-500 text-white; }
+  .card-frame-synchro { @apply bg-slate-200 text-slate-900; }
+  .card-frame-xyz { @apply bg-gray-800 text-white; }
+  .card-frame-link { @apply bg-blue-500 text-white; }
+  .card-frame-pendulum { @apply bg-emerald-400 text-emerald-900; }
+  .card-frame-spell { @apply bg-emerald-500 text-white; }
+  .card-frame-trap { @apply bg-pink-500 text-white; }
+
+  .glass {
+    background: rgba(15, 20, 32, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(42, 53, 84, 0.6);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #f0c040 0%, #fbbf24 50%, #f0c040 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .card-hover {
+    @apply transition-all duration-200 cursor-pointer;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--color-bg-card) 25%,
+      var(--color-bg-elevated) 50%,
+      var(--color-bg-card) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+}
+
+@layer utilities {
+  .text-primary { color: var(--color-text-primary); }
+  .text-secondary { color: var(--color-text-secondary); }
+  .text-muted { color: var(--color-text-muted); }
+  .bg-base { background-color: var(--color-bg-base); }
+  .bg-surface { background-color: var(--color-bg-surface); }
+  .bg-card-custom { background-color: var(--color-bg-card); }
+  .bg-elevated { background-color: var(--color-bg-elevated); }
+  .border-custom { border-color: var(--color-border); }
+  .border-subtle { border-color: var(--color-border-subtle); }
+}
