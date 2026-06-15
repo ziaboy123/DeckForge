@@ -22,12 +22,12 @@ export function useDeck({ initialEntries = [] }: UseDeckOptions = {}) {
     });
   }, []);
 
-  const addCard = useCallback((card: YgoCard) => {
+  const addCard = useCallback((card: YgoCard, forceZone?: DeckZone) => {
     registerCard(card);
 
     const banTcg = card.banlist_info?.ban_tcg;
     const maxCopies = banTcg === "Banned" ? 0 : banTcg === "Limited" ? 1 : banTcg === "Semi-Limited" ? 2 : 3;
-    const zone: DeckZone = getCardZone(card);
+    const zone: DeckZone = forceZone ?? getCardZone(card);
 
     setEntries((prev) => {
       const existing = prev.find((e) => e.cardId === card.id && e.zone === zone);
