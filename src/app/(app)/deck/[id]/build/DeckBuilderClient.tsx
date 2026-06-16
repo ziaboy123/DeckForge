@@ -81,13 +81,13 @@ function DeckSection({ title, entries, cards, max, countClass, onRemove }: DeckS
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-1.5">
-        <span className="text-xs font-semibold text-primary">{title}</span>
-        <span className={cn("text-xs font-mono font-bold ml-auto", countClass)}>
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-sm font-semibold text-primary">{title}</span>
+        <span className={cn("text-sm font-mono font-bold ml-auto", countClass)}>
           {total} / {max}
         </span>
       </div>
-      <div className="h-0.5 bg-bg-elevated rounded-full overflow-hidden mb-2">
+      <div className="h-1 bg-bg-elevated rounded-full overflow-hidden mb-3">
         <div
           className={cn(
             "h-full rounded-full transition-all duration-300",
@@ -99,10 +99,10 @@ function DeckSection({ title, entries, cards, max, countClass, onRemove }: DeckS
       {expanded.length === 0 ? (
         <p className="text-xs text-muted text-center py-3">No cards</p>
       ) : (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {expanded.map(({ card, cardId, key }) => (
             <CardTooltip key={key} card={card} side="right">
-              <div className="group relative w-[52px] h-[76px] rounded overflow-hidden border border-white/5 hover:border-brand-gold/40 transition-all duration-150 cursor-default">
+              <div className="group relative w-[72px] h-[105px] rounded overflow-hidden border border-white/5 hover:border-brand-gold/40 transition-all duration-150 cursor-default">
                 <Image
                   src={getCardImageUrl(card.id, "small")}
                   alt={card.name}
