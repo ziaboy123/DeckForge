@@ -15,7 +15,15 @@ interface CardGridProps {
   onRemoveCard?: (card: YgoCard) => void;
   cardCounts?: Map<number, number>;
   loading?: boolean;
+  columns?: 2 | 3 | 4 | 5;
 }
+
+const colsClass: Record<number, string> = {
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+  4: "grid-cols-4",
+  5: "grid-cols-5",
+};
 
 export function CardGrid({
   cards,
@@ -24,10 +32,12 @@ export function CardGrid({
   onRemoveCard,
   cardCounts,
   loading,
+  columns,
 }: CardGridProps) {
+  const gridCols = columns ? colsClass[columns] : "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 xl:grid-cols-5";
   if (loading) {
     return (
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+      <div className={cn("grid gap-2", gridCols)}>
         {Array.from({ length: 20 }).map((_, i) => (
           <div key={i} className="aspect-[59/86] rounded-lg shimmer" />
         ))}
@@ -45,7 +55,7 @@ export function CardGrid({
   }
 
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+    <div className={cn("grid gap-2", gridCols)}>
       {cards.map((card) => (
         <CardGridItem
           key={card.id}

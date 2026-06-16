@@ -323,7 +323,7 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
         </div>
       </div>
 
-      {/* Three-column layout */}
+      {/* Two-column layout */}
       <div className="flex gap-4 flex-1 min-h-0">
         {/* Left — Deck overview */}
         <div className="flex-1 min-w-0 flex flex-col gap-2 overflow-hidden">
@@ -377,30 +377,8 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
           </div>
         </div>
 
-        {/* Center — Search results */}
-        <div className="flex-1 overflow-y-auto">
-          {!searchEnabled ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <Search className="w-12 h-12 text-muted mb-4" />
-              <p className="text-secondary font-medium">Search for cards</p>
-              <p className="text-muted text-sm mt-1">
-                Type a card name or apply filters to browse
-              </p>
-            </div>
-          ) : (
-            <CardGrid
-              cards={searchResults}
-              onAddCard={handleAddCard}
-              onAddCardToSide={handleAddCardToSide}
-              onRemoveCard={(card) => removeCard(card.id)}
-              cardCounts={cardCounts}
-              loading={isFetching}
-            />
-          )}
-        </div>
-
-        {/* Right — Search */}
-        <div className="flex-1 min-w-0 flex flex-col gap-3 overflow-hidden">
+        {/* Right — Search + results */}
+        <div className="w-80 flex-shrink-0 flex flex-col gap-3 overflow-hidden">
           <Input
             ref={searchInputRef}
             placeholder="Search cards… (min 2 chars)"
@@ -420,6 +398,25 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
             onChange={(f) => setFilters((prev) => ({ ...prev, ...f }))}
             archetypes={archetypes}
           />
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {!searchEnabled ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <Search className="w-10 h-10 text-muted mb-3" />
+                <p className="text-secondary text-sm font-medium">Search for cards</p>
+                <p className="text-muted text-xs mt-1">Type a name or apply filters</p>
+              </div>
+            ) : (
+              <CardGrid
+                cards={searchResults}
+                onAddCard={handleAddCard}
+                onAddCardToSide={handleAddCardToSide}
+                onRemoveCard={(card) => removeCard(card.id)}
+                cardCounts={cardCounts}
+                loading={isFetching}
+                columns={3}
+              />
+            )}
+          </div>
         </div>
       </div>
 
