@@ -51,15 +51,17 @@ function cardTypeOrder(frameType: string): number {
 
 interface DeckSectionProps {
   title: string;
+  zone: "MAIN" | "EXTRA" | "SIDE";
   entries: DeckEntry[];
   cards: Map<number, YgoCard>;
   max: number;
   countClass: string;
   onRemove: (cardId: number) => void;
+  onMoveToSide?: (cardId: number) => void;
   onSelectCard?: (card: YgoCard) => void;
 }
 
-function DeckSection({ title, entries, cards, max, countClass, onRemove, onSelectCard }: DeckSectionProps) {
+function DeckSection({ title, zone, entries, cards, max, countClass, onRemove, onMoveToSide, onSelectCard }: DeckSectionProps) {
   const total = entries.reduce((s, e) => s + e.quantity, 0);
   const pct = Math.min((total / max) * 100, 100);
   const isOver = total > max;
@@ -115,12 +117,23 @@ function DeckSection({ title, entries, cards, max, countClass, onRemove, onSelec
                   className="object-cover"
                   unoptimized
                 />
-                <button
-                  onClick={(e) => { e.stopPropagation(); onRemove(cardId); }}
-                  className="absolute inset-0 bg-black/0 group-hover:bg-black/55 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100"
-                >
-                  <Minus className="w-4 h-4 text-white drop-shadow" />
-                </button>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/55 transition-all pointer-events-none" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onRemove(cardId); }}
+                    className="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-500 transition-colors shadow"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  {onMoveToSide && zone !== "SIDE" && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onMoveToSide(cardId); }}
+                      className="h-5 px-2 rounded-full bg-violet-600 text-white flex items-center justify-center hover:bg-violet-500 transition-colors shadow text-[10px] font-bold tracking-wide"
+                    >
+                      SIDE
+                    </button>
+                  )}
+                </div>
               </div>
             </CardTooltip>
           ))}
@@ -196,6 +209,12 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
 
   const handleAddCard = useCallback((card: YgoCard) => addCard(card), [addCard]);
   const handleAddCardToSide = useCallback((card: YgoCard) => addCard(card, "SIDE"), [addCard]);
+  const handleMoveToSide = useCallback((cardId: number, fromZone: "MAIN" | "EXTRA") => {
+    const card = cardCache.get(cardId);
+    if (!card) return;
+    removeCard(cardId, fromZone);
+    addCard(card, "SIDE");
+  }, [cardCache, removeCard, addCard]);
 
   const stats = calculateDeckStats(entries, cardCache);
 
@@ -331,11 +350,17 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
 
       {/* Two-column layout */}
       <div className="flex gap-4 flex-1 min-h-0">
-        {/* Left — Deck overview */}
+        {/* Far left — Card preview (xl screens only) */}
+        <div className="hidden xl:flex xl:flex-col w-80 flex-shrink-0 border-r border-border pr-4 overflow-hidden">
+          <CardPreview card={selectedCard} />
+        </div>
+
+        {/* Deck overview */}
         <div className="flex-1 min-w-0 flex flex-col gap-2 overflow-hidden">
           <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0">
             <DeckSection
               title="Main Deck"
+              zone="MAIN"
               entries={mainEntries}
               cards={cardCache}
               max={60}
@@ -345,21 +370,25 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
                 : "text-orange-400"
               }
               onRemove={(id) => removeCard(id, "MAIN")}
+              onMoveToSide={(id) => handleMoveToSide(id, "MAIN")}
               onSelectCard={setSelectedCard}
             />
             <div className="h-px bg-border" />
             <DeckSection
               title="Extra Deck"
+              zone="EXTRA"
               entries={extraEntries}
               cards={cardCache}
               max={15}
               countClass={extraTotal > 15 ? "text-red-400" : "text-violet-400"}
               onRemove={(id) => removeCard(id, "EXTRA")}
+              onMoveToSide={(id) => handleMoveToSide(id, "EXTRA")}
               onSelectCard={setSelectedCard}
             />
             <div className="h-px bg-border" />
             <DeckSection
               title="Side Deck"
+              zone="SIDE"
               entries={sideEntries}
               cards={cardCache}
               max={15}
@@ -429,10 +458,6 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
           </div>
         </div>
 
-        {/* Far right — Card preview (xl screens only) */}
-        <div className="hidden xl:flex xl:flex-col w-64 flex-shrink-0 border-l border-border pl-4 overflow-hidden">
-          <CardPreview card={selectedCard} />
-        </div>
       </div>
 
       {/* Import modal */}
