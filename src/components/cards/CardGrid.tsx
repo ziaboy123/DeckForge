@@ -13,6 +13,7 @@ interface CardGridProps {
   onAddCard?: (card: YgoCard) => void;
   onAddCardToSide?: (card: YgoCard) => void;
   onRemoveCard?: (card: YgoCard) => void;
+  onSelectCard?: (card: YgoCard) => void;
   cardCounts?: Map<number, number>;
   loading?: boolean;
   columns?: 2 | 3 | 4 | 5;
@@ -30,6 +31,7 @@ export function CardGrid({
   onAddCard,
   onAddCardToSide,
   onRemoveCard,
+  onSelectCard,
   cardCounts,
   loading,
   columns,
@@ -64,6 +66,7 @@ export function CardGrid({
           onAdd={onAddCard}
           onAddToSide={onAddCardToSide}
           onRemove={onRemoveCard}
+          onSelect={onSelectCard}
         />
       ))}
     </div>
@@ -76,9 +79,10 @@ interface CardGridItemProps {
   onAdd?: (card: YgoCard) => void;
   onAddToSide?: (card: YgoCard) => void;
   onRemove?: (card: YgoCard) => void;
+  onSelect?: (card: YgoCard) => void;
 }
 
-function CardGridItem({ card, count, onAdd, onAddToSide, onRemove }: CardGridItemProps) {
+function CardGridItem({ card, count, onAdd, onAddToSide, onRemove, onSelect }: CardGridItemProps) {
   const accentColor = getFrameColorHex(card.frameType);
   const isMaxed = count >= 3;
   const banTcg = card.banlist_info?.ban_tcg;
@@ -95,6 +99,7 @@ function CardGridItem({ card, count, onAdd, onAddToSide, onRemove }: CardGridIte
             : "border-border/50 hover:border-border"
         )}
         style={count > 0 ? { borderColor: accentColor, boxShadow: `0 0 12px ${accentColor}30` } : {}}
+        onClick={() => onSelect?.(card)}
       >
         {/* Card image */}
         <div className="relative aspect-[59/86]">

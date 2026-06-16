@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/Input";
 import { CardGrid } from "@/components/cards/CardGrid";
 import { CardFilters } from "@/components/cards/CardFilters";
 import { CardTooltip } from "@/components/cards/CardTooltip";
+import { CardPreview } from "@/components/cards/CardPreview";
 import { Modal } from "@/components/ui/Modal";
 import { useDeck } from "@/hooks/useDeck";
 import { cn, calculateDeckStats, exportDeckList, parseDeckList } from "@/lib/utils";
@@ -55,9 +56,10 @@ interface DeckSectionProps {
   max: number;
   countClass: string;
   onRemove: (cardId: number) => void;
+  onSelectCard?: (card: YgoCard) => void;
 }
 
-function DeckSection({ title, entries, cards, max, countClass, onRemove }: DeckSectionProps) {
+function DeckSection({ title, entries, cards, max, countClass, onRemove, onSelectCard }: DeckSectionProps) {
   const total = entries.reduce((s, e) => s + e.quantity, 0);
   const pct = Math.min((total / max) * 100, 100);
   const isOver = total > max;
@@ -102,7 +104,10 @@ function DeckSection({ title, entries, cards, max, countClass, onRemove }: DeckS
         <div className="flex flex-wrap gap-1.5">
           {expanded.map(({ card, cardId, key }) => (
             <CardTooltip key={key} card={card} side="right">
-              <div className="group relative w-[72px] h-[105px] rounded overflow-hidden border border-white/5 hover:border-brand-gold/40 transition-all duration-150 cursor-default">
+              <div
+                className="group relative w-[72px] h-[105px] rounded overflow-hidden border border-white/5 hover:border-brand-gold/40 transition-all duration-150 cursor-pointer"
+                onClick={() => onSelectCard?.(card)}
+              >
                 <Image
                   src={getCardImageUrl(card.id, "small")}
                   alt={card.name}
@@ -111,7 +116,7 @@ function DeckSection({ title, entries, cards, max, countClass, onRemove }: DeckS
                   unoptimized
                 />
                 <button
-                  onClick={() => onRemove(cardId)}
+                  onClick={(e) => { e.stopPropagation(); onRemove(cardId); }}
                   className="absolute inset-0 bg-black/0 group-hover:bg-black/55 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100"
                 >
                   <Minus className="w-4 h-4 text-white drop-shadow" />
@@ -134,6 +139,7 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
   const [importOpen, setImportOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [importText, setImportText] = useState("");
+  const [selectedCard, setSelectedCard] = useState<YgoCard | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const initialCards = new Map(Object.entries(initialCardData).map(([k, v]) => [Number(k), v]));
@@ -339,6 +345,7 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
                 : "text-orange-400"
               }
               onRemove={(id) => removeCard(id, "MAIN")}
+              onSelectCard={setSelectedCard}
             />
             <div className="h-px bg-border" />
             <DeckSection
@@ -348,6 +355,7 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
               max={15}
               countClass={extraTotal > 15 ? "text-red-400" : "text-violet-400"}
               onRemove={(id) => removeCard(id, "EXTRA")}
+              onSelectCard={setSelectedCard}
             />
             <div className="h-px bg-border" />
             <DeckSection
@@ -357,6 +365,7 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
               max={15}
               countClass={sideTotal > 15 ? "text-red-400" : "text-blue-400"}
               onRemove={(id) => removeCard(id, "SIDE")}
+              onSelectCard={setSelectedCard}
             />
           </div>
 
@@ -411,12 +420,18 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
                 onAddCard={handleAddCard}
                 onAddCardToSide={handleAddCardToSide}
                 onRemoveCard={(card) => removeCard(card.id)}
+                onSelectCard={setSelectedCard}
                 cardCounts={cardCounts}
                 loading={isFetching}
                 columns={3}
               />
             )}
           </div>
+        </div>
+
+        {/* Far right — Card preview (xl screens only) */}
+        <div className="hidden xl:flex xl:flex-col w-64 flex-shrink-0 border-l border-border pl-4 overflow-hidden">
+          <CardPreview card={selectedCard} />
         </div>
       </div>
 
