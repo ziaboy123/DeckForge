@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,8 +20,6 @@ type FormData = z.infer<typeof schema>;
 
 export function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -42,7 +40,7 @@ export function LoginForm() {
       return;
     }
 
-    router.push(callbackUrl);
+    router.push("/dashboard");
     router.refresh();
   };
 
