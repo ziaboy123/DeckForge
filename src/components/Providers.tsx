@@ -19,7 +19,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <SessionProvider>
+    <SessionProvider basePath="/deckforge/api/auth">
       <QueryClientProvider client={queryClient}>
         {children}
         <Toaster
