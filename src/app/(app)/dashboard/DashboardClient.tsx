@@ -96,7 +96,7 @@ export function DashboardClient({ initialDecks, userName }: Props) {
   });
 
   const onCreateDeck = async (data: CreateForm) => {
-    const res = await fetch("/api/decks", {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/decks`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -112,7 +112,7 @@ export function DashboardClient({ initialDecks, userName }: Props) {
 
   const onDelete = async () => {
     if (!deleteTarget) return;
-    const res = await fetch(`/api/decks/${deleteTarget.id}`, { method: "DELETE" });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/decks/${deleteTarget.id}`, { method: "DELETE" });
     if (res.ok) {
       setDecks((prev) => prev.filter((d) => d.id !== deleteTarget.id));
       toast.success(`"${deleteTarget.name}" deleted`);
@@ -123,7 +123,7 @@ export function DashboardClient({ initialDecks, userName }: Props) {
   };
 
   const onDuplicate = async (deck: DeckSummary) => {
-    const res = await fetch(`/api/decks/${deck.id}/duplicate`, { method: "POST" });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/decks/${deck.id}/duplicate`, { method: "POST" });
     const json = await res.json();
     if (res.ok) {
       toast.success(`"${deck.name}" duplicated`);

@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   basePath: '/deckforge',
+  env: {
+    NEXT_PUBLIC_BASE_PATH: '/deckforge',
+  },
   images: {
     remotePatterns: [
       {

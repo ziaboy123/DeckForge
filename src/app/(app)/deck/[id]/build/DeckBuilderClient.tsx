@@ -180,7 +180,7 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
       if (filters.banlist) params.set("banlist", filters.banlist);
       if (filters.sort) params.set("sort", filters.sort);
       params.set("num", "60");
-      const res = await fetch(`/api/cards/search?${params}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/cards/search?${params}`);
       const json = await res.json();
       return (json.data as YgoCard[]) ?? [];
     },
@@ -191,7 +191,7 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
   const { data: archetypes } = useQuery({
     queryKey: ["archetypes"],
     queryFn: async () => {
-      const res = await fetch("/api/cards/archetypes");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/cards/archetypes`);
       const json = await res.json();
       return json.archetypes as string[];
     },
@@ -227,7 +227,7 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
         quantity: e.quantity,
         sortOrder: idx,
       }));
-      const res = await fetch(`/api/decks/${deck.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/decks/${deck.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: deckName, cards }),
@@ -260,7 +260,7 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
       const fetchedCards: YgoCard[] = [];
       for (const { cardName, quantity, zone } of parsed) {
         try {
-          const res = await fetch(`/api/cards/search?name=${encodeURIComponent(cardName)}&num=1`);
+          const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/cards/search?name=${encodeURIComponent(cardName)}&num=1`);
           const json = await res.json();
           if (json.data?.length > 0) {
             fetchedCards.push({ ...json.data[0], _importQuantity: quantity, _importZone: zone });

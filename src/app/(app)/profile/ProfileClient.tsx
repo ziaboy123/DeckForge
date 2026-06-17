@@ -46,7 +46,7 @@ export function ProfileClient({ user, deckCount }: Props) {
   });
 
   const onSaveProfile = async (data: ProfileForm) => {
-    const res = await fetch(`/api/user/profile`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/user/profile`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: data.name }),
@@ -60,7 +60,7 @@ export function ProfileClient({ user, deckCount }: Props) {
   };
 
   const onChangePassword = async (data: PasswordForm) => {
-    const res = await fetch(`/api/user/password`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/user/password`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

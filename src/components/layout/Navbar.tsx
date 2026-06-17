@@ -93,7 +93,7 @@ export function Navbar() {
                   <DropdownMenu.Separator className="my-1 h-px bg-border" />
                   <DropdownMenu.Item
                     className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-red-400 cursor-pointer hover:bg-red-900/20 outline-none"
-                    onSelect={() => signOut({ callbackUrl: "/" })}
+                    onSelect={() => signOut({ callbackUrl: "/deckforge" })}
                   >
                     <LogOut className="w-4 h-4" />
                     Sign out

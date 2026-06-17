@@ -43,7 +43,7 @@ export default function RegisterPage() {
   const password = watch("password") ?? "";
 
   const onSubmit = async (data: FormData) => {
-    const res = await fetch("/api/auth/register", {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
