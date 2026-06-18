@@ -153,6 +153,7 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
   const [exportOpen, setExportOpen] = useState(false);
   const [importText, setImportText] = useState("");
   const [selectedCard, setSelectedCard] = useState<YgoCard | null>(null);
+  const [mobileTab, setMobileTab] = useState<"deck" | "search">("deck");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const initialCards = new Map(Object.entries(initialCardData).map(([k, v]) => [Number(k), v]));
@@ -348,6 +349,22 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
         </div>
       </div>
 
+      {/* Mobile tab switcher */}
+      <div className="flex sm:hidden border border-border rounded-lg overflow-hidden flex-shrink-0">
+        <button
+          onClick={() => setMobileTab("deck")}
+          className={cn("flex-1 py-2 text-sm font-medium transition-colors", mobileTab === "deck" ? "bg-brand-gold text-bg-base" : "text-secondary")}
+        >
+          Deck
+        </button>
+        <button
+          onClick={() => setMobileTab("search")}
+          className={cn("flex-1 py-2 text-sm font-medium transition-colors", mobileTab === "search" ? "bg-brand-gold text-bg-base" : "text-secondary")}
+        >
+          Search
+        </button>
+      </div>
+
       {/* Two-column layout */}
       <div className="flex gap-4 flex-1 min-h-0">
         {/* Far left — Card preview (xl screens only) */}
@@ -356,7 +373,7 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
         </div>
 
         {/* Deck overview */}
-        <div className="flex-1 min-w-0 flex flex-col gap-2 overflow-hidden">
+        <div className={cn("flex-1 min-w-0 flex flex-col gap-2 overflow-hidden", mobileTab === "search" && "hidden sm:flex")}>
           <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0">
             <DeckSection
               title="Main Deck"
@@ -416,7 +433,7 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
         </div>
 
         {/* Right — Search + results */}
-        <div className="w-80 flex-shrink-0 flex flex-col gap-3 overflow-hidden">
+        <div className={cn("flex-shrink-0 flex flex-col gap-3 overflow-hidden", mobileTab === "deck" ? "hidden sm:flex sm:w-80" : "w-full sm:w-80")}>
           <Input
             ref={searchInputRef}
             placeholder="Search cards… (min 2 chars)"

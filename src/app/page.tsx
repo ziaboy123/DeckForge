@@ -54,9 +54,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-bg-base flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl flex rounded-xl overflow-hidden border border-border" style={{ minHeight: '560px' }}>
+      <div className="w-full max-w-4xl flex flex-col sm:flex-row rounded-xl overflow-hidden border border-border sm:min-h-[560px]">
         {/* Left — login panel */}
-        <div className="w-80 shrink-0 bg-bg-card flex flex-col justify-between px-10 py-10 border-r border-border">
+        <div className="sm:w-80 shrink-0 bg-bg-card flex flex-col justify-between px-8 sm:px-10 py-10 border-b border-border sm:border-b-0 sm:border-r">
           <div>
             {/* Logo */}
             <div className="flex items-center gap-2.5 mb-10">
@@ -128,7 +128,7 @@ export default function HomePage() {
         </div>
 
         {/* Right — info panel */}
-        <div className="flex-1 bg-bg-elevated flex-col justify-center px-12 py-10 hidden sm:flex">
+        <div className="flex-1 bg-bg-elevated flex flex-col justify-center px-8 sm:px-12 py-10">
           <h2 className="text-3xl font-bold text-primary mb-3">
             Build smarter. Test faster.
           </h2>
