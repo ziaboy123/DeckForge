@@ -12,6 +12,13 @@ export const authOptions: NextAuthOptions = {
     signIn: "/",
     error: "/",
   },
+  logger: {
+    // a login ended by a password change (see the jwt callback) is expected, not an error worth logging
+    error(code, metadata) {
+      if (code === "JWT_SESSION_ERROR" && (metadata as { message?: string })?.message === "Session revoked") return;
+      console.error(`[next-auth][error][${code}]`, metadata);
+    },
+  },
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -36,6 +43,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           image: user.image,
+          sessionVersion: user.sessionVersion,
         };
       },
     }),
@@ -46,7 +54,14 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
+        token.sv = (user as { sessionVersion?: number }).sessionVersion ?? 0;
+        return token;
       }
+      // Logins are signed tokens the server can't take back, so each one carries the account's session version:
+      // once the password changes (or the account is deleted) the versions no longer match, and throwing here
+      // makes NextAuth clear the session.
+      const account = await prisma.user.findUnique({ where: { id: token.id as string }, select: { sessionVersion: true } });
+      if (!account || account.sessionVersion !== ((token.sv as number | undefined) ?? 0)) throw new Error("Session revoked");
       return token;
     },
     async session({ session, token }) {

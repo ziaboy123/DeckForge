@@ -23,8 +23,9 @@ export async function PATCH(req: Request) {
     if (!valid) return NextResponse.json({ error: "Current password is incorrect" }, { status: 400 });
 
     const hashed = await bcrypt.hash(newPassword, 12);
-    await prisma.user.update({ where: { id: session.user.id }, data: { password: hashed } });
-    return NextResponse.json({ success: true });
+    // a new password signs the account out everywhere, this browser included
+    await prisma.user.update({ where: { id: session.user.id }, data: { password: hashed, sessionVersion: { increment: 1 } } });
+    return NextResponse.json({ success: true, signedOut: true });
   } catch (err) {
     if (err instanceof z.ZodError) return NextResponse.json({ error: err.errors[0].message }, { status: 400 });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -69,8 +69,10 @@ export function ProfileClient({ user, deckCount }: Props) {
       }),
     });
     if (res.ok) {
-      toast.success("Password changed!");
+      // changing the password signs you out everywhere, including here
+      toast.success("Password changed. Please log in again.");
       passwordForm.reset();
+      setTimeout(() => signOut({ callbackUrl: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/` }), 1200);
     } else {
       const json = await res.json();
       toast.error(json.error ?? "Failed to change password");
