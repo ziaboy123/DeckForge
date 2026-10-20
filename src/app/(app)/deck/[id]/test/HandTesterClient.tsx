@@ -19,7 +19,7 @@ import { CardTooltip } from "@/components/cards/CardTooltip";
 import { Badge } from "@/components/ui/Badge";
 import { useDeck } from "@/hooks/useDeck";
 import { useHandTest } from "@/hooks/useHandTest";
-import { getCardImageUrl } from "@/lib/ygoprodeck";
+import { getCardImageUrl } from "@/lib/cardImages";
 import { getFrameColorHex, cn, shuffle, expandDeckToCards } from "@/lib/utils";
 import type { DeckEntry, YgoCard } from "@/types/yugioh";
 

@@ -11,6 +11,7 @@ import { Swords, Eye, EyeOff, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { PRIVACY_URL, SiteFooter, TERMS_URL } from "@/components/layout/SiteFooter";
 import { PASSWORD_TOO_LONG, passwordFits } from "@/lib/password";
 
 const schema = z.object({
@@ -71,7 +72,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg-base flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-bg-base flex flex-col items-center justify-center gap-10 px-4 py-12">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -97,8 +98,8 @@ export default function RegisterPage() {
               id="name"
               type="text"
               label="Display name"
-              placeholder="Your name"
-              autoComplete="name"
+              placeholder="A nickname"
+              autoComplete="nickname"
               error={errors.name?.message}
               {...register("name")}
             />
@@ -170,6 +171,13 @@ export default function RegisterPage() {
             >
               Create account
             </Button>
+            {/* the Terms and Privacy Policy are at the domain root, outside the basePath: plain <a>, not next/link */}
+            <p className="text-xs text-muted text-center leading-relaxed">
+              By creating an account you agree to the{" "}
+              <a href={TERMS_URL} className="text-brand-gold hover:underline">Terms</a>
+              {" "}and confirm you&apos;re 13 or older. See the{" "}
+              <a href={PRIVACY_URL} className="text-brand-gold hover:underline">Privacy Policy</a>.
+            </p>
           </form>
 
           <p className="mt-6 text-center text-sm text-secondary">
@@ -180,6 +188,7 @@ export default function RegisterPage() {
           </p>
         </div>
       </div>
+      <SiteFooter />
     </div>
   );
 }

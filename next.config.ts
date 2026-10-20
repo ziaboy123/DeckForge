@@ -6,13 +6,9 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_BASE_PATH: '/deckforge',
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "images.ygoprodeck.com",
-        pathname: "/**",
-      },
-    ],
+    // card pictures are Millennium Arena's copies under /millenniumarena/img, outside this app's basePath, which
+    // next/image can't optimise; nothing is loaded from YGOPRODeck's image server (see src/lib/cardImages.ts)
+    unoptimized: true,
   },
 };
 

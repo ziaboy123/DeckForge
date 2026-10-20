@@ -47,27 +47,10 @@ export type Attribute =
 
 export type BanStatus = "Banned" | "Limited" | "Semi-Limited" | "Unlimited";
 
+// Just the passcode of each artwork: the picture's address comes from getCardImageUrl() in lib/cardImages.ts
+// (Millennium Arena's copies on this site, not YGOPRODeck's image server).
 export interface CardImage {
   id: number;
-  image_url: string;
-  image_url_small: string;
-  image_url_cropped?: string;
-}
-
-export interface CardSet {
-  set_name: string;
-  set_code: string;
-  set_rarity: string;
-  set_rarity_code: string;
-  set_price?: string;
-}
-
-export interface CardPrice {
-  cardmarket_price: string;
-  tcgplayer_price: string;
-  ebay_price: string;
-  amazon_price: string;
-  coolstuffinc_price: string;
 }
 
 export interface BanlistInfo {
@@ -75,6 +58,7 @@ export interface BanlistInfo {
   ban_ocg?: BanStatus;
 }
 
+// A card as DeckForge keeps it: YGOPRODeck's card data cut down to what the app uses (see slimCard in lib/cardIndex.ts).
 export interface YgoCard {
   id: number;
   name: string;
@@ -90,11 +74,8 @@ export interface YgoCard {
   linkmarkers?: string[];
   scale?: number;
   archetype?: string;
-  ygoprodeck_utility?: string;
   banlist_info?: BanlistInfo;
-  card_sets?: CardSet[];
   card_images: CardImage[];
-  card_prices?: CardPrice[];
 }
 
 export interface SearchFilters {

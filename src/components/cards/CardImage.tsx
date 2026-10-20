@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { cn, getFrameColorHex } from "@/lib/utils";
-import { getCardImageUrl } from "@/lib/ygoprodeck";
+import { getCardImageUrl } from "@/lib/cardImages";
 import type { YgoCard } from "@/types/yugioh";
 
 interface CardImageProps {

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { TOO_MANY_ATTEMPTS } from "@/lib/rateLimit";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { LegalLinks, SiteFooter } from "@/components/layout/SiteFooter";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -58,7 +59,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg-base flex items-center justify-center p-4">
+    <div className="min-h-screen bg-bg-base flex flex-col items-center justify-center gap-8 p-4">
       <div className="w-full max-w-4xl flex flex-col sm:flex-row rounded-xl overflow-hidden border border-border sm:min-h-[560px]">
         {/* Left — login panel */}
         <div className="sm:w-80 shrink-0 bg-bg-card flex flex-col justify-between px-8 sm:px-10 py-10 border-b border-border sm:border-b-0 sm:border-r">
@@ -119,18 +120,7 @@ export default function HomePage() {
             </form>
           </div>
 
-          <p className="text-xs text-muted">
-            Card data via{" "}
-            <a
-              href="https://ygoprodeck.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-secondary transition-colors"
-            >
-              YGOPRODeck
-            </a>
-            . Yu-Gi-Oh! is a trademark of Konami.
-          </p>
+          <LegalLinks className="mt-8" />
         </div>
 
         {/* Right — info panel */}
@@ -155,6 +145,7 @@ export default function HomePage() {
           </ul>
         </div>
       </div>
+      <SiteFooter />
     </div>
   );
 }

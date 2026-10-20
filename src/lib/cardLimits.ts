@@ -2,7 +2,7 @@ import { RateLimiter, clientIp, shared, tooManyRequests } from "@/lib/rateLimit"
 
 // Card searches and lookups per signed-in user, and per visitor address (so a pile of new accounts doesn't get
 // round it). Generous enough for typing and a full deck-list import (one search per line), tight enough that
-// nobody can run the YGOPRODeck budget down for everyone.
+// nobody can hog the server, or (while there's no local copy of the card data) the YGOPRODeck budget.
 const cardLookupsPerUser = shared("cardLookupsPerUser", () => new RateLimiter(150, 60_000));
 const cardLookupsPerIp = shared("cardLookupsPerIp", () => new RateLimiter(300, 60_000));
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { getCardImageUrl } from "@/lib/ygoprodeck";
+import { getCardImageUrl } from "@/lib/cardImages";
 import { getFrameColorHex } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import type { YgoCard } from "@/types/yugioh";

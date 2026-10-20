@@ -34,3 +34,6 @@ yarn-error.log*
 .vercel
 *.tsbuildinfo
 next-env.d.ts
+
+# Card data downloaded from YGOPRODeck (see src/lib/cardData.ts)
+/data/

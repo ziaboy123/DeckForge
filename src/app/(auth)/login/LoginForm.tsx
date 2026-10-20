@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { TOO_MANY_ATTEMPTS } from "@/lib/rateLimit";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { LegalLinks } from "@/components/layout/SiteFooter";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -121,6 +122,7 @@ export function LoginForm() {
               Create one free
             </Link>
           </p>
+          <LegalLinks className="mt-4 text-center" />
         </div>
       </div>
     </div>

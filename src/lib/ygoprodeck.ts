@@ -1,71 +1,20 @@
 import { shared } from "@/lib/rateLimit";
+import { getCardIndex } from "@/lib/cardData";
+import { cardsByIds, searchIndex, slimCard } from "@/lib/cardIndex";
+import { PAGE_WAIT_MS, SEARCH_WAIT_MS, UpstreamBusyError, YgoApiError, apiFetchText } from "@/lib/ygoApi";
 import type { YgoCard, SearchFilters } from "@/types/yugioh";
 
-const BASE_URL = "https://db.ygoprodeck.com/api/v7";
+export { UpstreamBusyError, YgoApiError };
 
-// only the status goes in the message: YGOPRODeck's own error text never reaches visitors
-export class YgoApiError extends Error {
-  status: number;
-  constructor(status: number) {
-    super(`YGOPRODeck API error ${status}`);
-    this.status = status;
-  }
-}
+// Card data for the app. Everything comes from DeckForge's own copy of the card database (cardData.ts); only while
+// there's no copy yet (the first download hasn't finished, or failed) do searches and lookups go to YGOPRODeck's
+// live API, through the shared queue in ygoApi.ts and the caches below.
 
-// thrown when the queue for YGOPRODeck is too long to wait in right now
-export class UpstreamBusyError extends Error {
-  constructor() {
-    super("YGOPRODeck queue is full");
-  }
-}
+// how long a request waits for the copy to load (from disk that's well under a second) before going live instead
+const SEARCH_LOAD_WAIT_MS = 3_000;
+const PAGE_LOAD_WAIT_MS = 8_000;
 
-// Every call to YGOPRODeck (searches, deck pages, card lookups, archetypes) waits its turn in one queue that lets
-// out at most 6 a second (after a burst of 6), well under its limit of 20 a second. Going over that gets the server
-// blocked for an hour, which would break card data on every page. Calls go in the order they arrived, and one that
-// would have to wait longer than it's willing to gives up straight away (without taking a place in the queue).
-const UPSTREAM_GAP_MS = 167; // a sixth of a second, rounded up (whole numbers keep the sums exact)
-const UPSTREAM_BURST = 6;
-// shared() keeps one queue for the whole process, not one per bundle (see rateLimit.ts)
-const upstream = shared("ygoUpstream", () => ({ nextAt: 0 }));
-
-/** Waits for this call's turn to go to YGOPRODeck; exported for the tests. */
-export async function waitForUpstreamSlot(maxWaitMs: number, now = Date.now()) {
-  const due = Math.max(upstream.nextAt, now);
-  const wait = due - (UPSTREAM_BURST - 1) * UPSTREAM_GAP_MS - now;
-  if (wait > maxWaitMs) throw new UpstreamBusyError();
-  upstream.nextAt = due + UPSTREAM_GAP_MS;
-  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-}
-
-// how long each kind of call will queue for: searches are typed live so they give up sooner than a page load
-const SEARCH_WAIT_MS = 5_000;
-const PAGE_WAIT_MS = 8_000;
-
-async function apiFetchText(
-  endpoint: string,
-  params: Record<string, string | number | undefined> = {},
-  maxWaitMs = SEARCH_WAIT_MS
-): Promise<string> {
-  const url = new URL(`${BASE_URL}${endpoint}`);
-  Object.entries(params).forEach(([k, v]) => {
-    if (v !== undefined && v !== "") url.searchParams.set(k, String(v));
-  });
-
-  await waitForUpstreamSlot(maxWaitMs);
-  // no Next fetch cache: the caches below do that job, and Next's would write every unique search to disk
-  const res = await fetch(url.toString(), {
-    cache: "no-store",
-    headers: { "Content-Type": "application/json" },
-    signal: AbortSignal.timeout(15_000), // don't leave pages hanging if YGOPRODeck stops answering
-  });
-
-  if (!res.ok) {
-    await res.body?.cancel();
-    throw new YgoApiError(res.status);
-  }
-
-  return res.text();
-}
+// ── Live API fallback ──────────────────────────────────────────────────────────────────────────────────────────
 
 // A Map where entries expire, with a cap on the total size (of the JSON they came from); the oldest go first.
 class TtlCache<K, V> {
@@ -129,16 +78,15 @@ async function fetchCards(
     if (err instanceof YgoApiError && err.status === 400) text = '{"data":[]}';
     else throw err;
   }
-  const result = JSON.parse(text) as CardList;
-  if (!Array.isArray(result.data)) result.data = [];
+  const raw = (JSON.parse(text) as { data?: unknown }).data;
+  // cut down the same way as the local copy, so pages get the same shape (and no links to YGOPRODeck's images)
+  const result: CardList = { data: Array.isArray(raw) ? raw.map(slimCard).filter((c): c is YgoCard => c !== null) : [] };
   const perCard = Math.ceil(text.length / Math.max(1, result.data.length));
-  for (const card of result.data) if (Number.isInteger(card?.id)) cardCache.set(card.id, card, perCard);
+  for (const card of result.data) cardCache.set(card.id, card, perCard);
   return { result, bytes: text.length };
 }
 
-export async function searchCards(
-  filters: SearchFilters
-): Promise<{ data: YgoCard[] }> {
+async function liveSearch(filters: SearchFilters): Promise<CardList> {
   const params: Record<string, string | number | undefined> = {
     fname: filters.name || undefined,
     type: filters.type || undefined,
@@ -181,13 +129,7 @@ export async function searchCards(
 const MAX_IDS = 300;
 const IDS_PER_CALL = 100;
 
-/**
- * Card data for a list of passcodes. Cards in memory come straight back; the rest are asked for in a call or two,
- * but only if `canFetch` (when given) says this caller still has lookups left. If YGOPRODeck is busy or down, it
- * gives back what it has rather than failing.
- */
-export async function getCardsByIds(ids: number[], opts: { canFetch?: () => boolean } = {}): Promise<YgoCard[]> {
-  const wanted = [...new Set(ids)].filter((id) => Number.isInteger(id) && id > 0).slice(0, MAX_IDS);
+async function liveCardsByIds(wanted: number[], canFetch?: () => boolean): Promise<YgoCard[]> {
   const found: YgoCard[] = [];
   const missing: number[] = [];
   for (const id of wanted) {
@@ -195,7 +137,7 @@ export async function getCardsByIds(ids: number[], opts: { canFetch?: () => bool
     if (card) found.push(card);
     else missing.push(id);
   }
-  if (missing.length === 0 || (opts.canFetch && !opts.canFetch())) return found;
+  if (missing.length === 0 || (canFetch && !canFetch())) return found;
 
   for (let i = 0; i < missing.length; i += IDS_PER_CALL) {
     try {
@@ -211,43 +153,57 @@ export async function getCardsByIds(ids: number[], opts: { canFetch?: () => bool
   return found;
 }
 
+const liveArchetypes = shared("ygoArchetypes", () => ({ cache: null as { expires: number; list: string[] } | null }));
+
+// ── What the app calls ─────────────────────────────────────────────────────────────────────────────────────────
+
+export async function searchCards(filters: SearchFilters): Promise<{ data: YgoCard[] }> {
+  const index = await getCardIndex(SEARCH_LOAD_WAIT_MS);
+  return index ? searchIndex(index, filters) : liveSearch(filters);
+}
+
+/**
+ * Card data for a list of passcodes, from the local copy. Without one, cards seen lately come from memory and the
+ * rest are asked for in a call or two, but only if `canFetch` (when given) says this caller still has lookups left;
+ * if YGOPRODeck is busy or down, it gives back what it has rather than failing.
+ */
+export async function getCardsByIds(ids: number[], opts: { canFetch?: () => boolean } = {}): Promise<YgoCard[]> {
+  const wanted = [...new Set(ids)].filter((id) => Number.isInteger(id) && id > 0).slice(0, MAX_IDS);
+  if (wanted.length === 0) return [];
+  const index = await getCardIndex(PAGE_LOAD_WAIT_MS);
+  // the copy is the whole database, so a passcode it doesn't know isn't worth asking YGOPRODeck about
+  return index ? cardsByIds(index, wanted) : liveCardsByIds(wanted, opts.canFetch);
+}
+
 export async function getCardById(id: number): Promise<YgoCard | null> {
   const [card] = await getCardsByIds([id]);
   return card ?? null;
 }
 
-const archetypes = shared("ygoArchetypes", () => ({ cache: null as { expires: number; list: string[] } | null }));
-
 export async function getArchetypes(): Promise<string[]> {
-  if (archetypes.cache && archetypes.cache.expires > Date.now()) return archetypes.cache.list;
+  const index = await getCardIndex(PAGE_LOAD_WAIT_MS);
+  if (index) return index.archetypes;
+
+  if (liveArchetypes.cache && liveArchetypes.cache.expires > Date.now()) return liveArchetypes.cache.list;
   try {
     const result = JSON.parse(await apiFetchText("/archetypes.php")) as { archetype_name: string }[];
     const list = result.map((a) => a.archetype_name).sort();
-    archetypes.cache = { expires: Date.now() + 6 * 60 * 60_000, list };
+    liveArchetypes.cache = { expires: Date.now() + 6 * 60 * 60_000, list };
     return list;
   } catch {
     // try again in a minute rather than on every deck builder load
-    archetypes.cache = { expires: Date.now() + 60_000, list: archetypes.cache?.list ?? [] };
-    return archetypes.cache.list;
+    liveArchetypes.cache = { expires: Date.now() + 60_000, list: liveArchetypes.cache?.list ?? [] };
+    return liveArchetypes.cache.list;
   }
 }
 
 export async function getRandomCard(): Promise<YgoCard | null> {
+  const index = await getCardIndex(PAGE_LOAD_WAIT_MS);
+  if (index) return index.cards[Math.floor(Math.random() * index.cards.length)] ?? null;
   try {
-    const result = JSON.parse(await apiFetchText("/randomcard.php")) as { data?: YgoCard[] };
-    return result.data?.[0] ?? null;
+    const result = JSON.parse(await apiFetchText("/randomcard.php")) as { data?: unknown[] };
+    return slimCard(result.data?.[0]);
   } catch {
     return null;
-  }
-}
-
-export function getCardImageUrl(cardId: number, size: "normal" | "small" | "cropped" = "normal"): string {
-  switch (size) {
-    case "small":
-      return `https://images.ygoprodeck.com/images/cards_small/${cardId}.jpg`;
-    case "cropped":
-      return `https://images.ygoprodeck.com/images/cards_cropped/${cardId}.jpg`;
-    default:
-      return `https://images.ygoprodeck.com/images/cards/${cardId}.jpg`;
   }
 }

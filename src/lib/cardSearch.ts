@@ -1,6 +1,6 @@
 import type { SearchFilters } from "@/types/yugioh";
 
-// What the card search accepts. Anything else is refused rather than passed on to YGOPRODeck.
+// What the card search accepts. Anything else is refused rather than searched for (or passed on to YGOPRODeck).
 export const MAX_RESULTS = 100;
 const MAX_OFFSET = 20_000; // a bit over the whole card pool
 const MAX_TEXT = 100;

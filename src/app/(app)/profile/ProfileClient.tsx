@@ -5,11 +5,15 @@ import { signOut, useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { User, Layers, Calendar } from "lucide-react";
+import { User, Layers, Calendar, Trash2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { PRIVACY_URL } from "@/components/layout/SiteFooter";
 import { PASSWORD_TOO_LONG, passwordFits } from "@/lib/password";
+
+// DeckForge shares its accounts with Millennium Arena, and accounts are deleted from there (Settings, Account section)
+const DELETE_ACCOUNT_URL = "https://daniyalzia.co.uk/millenniumarena/settings";
 
 interface Props {
   user: { id: string; name: string; email: string; memberSince: string };
@@ -191,6 +195,31 @@ export function ProfileClient({ user, deckCount }: Props) {
           </Button>
         </form>
       )}
+
+      {/* Delete account */}
+      <section className="border border-red-900/40 rounded-xl p-5 space-y-3">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-primary">
+          <Trash2 className="w-4 h-4 text-red-400" />
+          Delete your account
+        </h2>
+        <p className="text-sm text-secondary leading-relaxed">
+          Your DeckForge account is the same account you use on Millennium Arena, so it&apos;s deleted from there:
+          open Millennium Arena&apos;s Settings and go to the Account section (sign in with the same email and password
+          if it asks).
+        </p>
+        <p className="text-sm text-secondary leading-relaxed">
+          Deleting it there removes your account everywhere, including all your DeckForge decks
+          ({deckCount} {deckCount === 1 ? "deck" : "decks"}). It can&apos;t be undone. The{" "}
+          <a href={PRIVACY_URL} className="text-brand-gold hover:underline">Privacy Policy</a> explains what happens to
+          your data.
+        </p>
+        <Button variant="danger-ghost" size="sm" asChild className="border border-red-900/50">
+          <a href={DELETE_ACCOUNT_URL}>
+            Delete account in Millennium Arena Settings
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </Button>
+      </section>
     </div>
   );
 }

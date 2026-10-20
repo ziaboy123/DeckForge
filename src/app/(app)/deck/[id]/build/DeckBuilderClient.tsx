@@ -28,7 +28,7 @@ import { CardPreview } from "@/components/cards/CardPreview";
 import { Modal } from "@/components/ui/Modal";
 import { useDeck } from "@/hooks/useDeck";
 import { cn, calculateDeckStats, exportDeckList, parseDeckList } from "@/lib/utils";
-import { getCardImageUrl } from "@/lib/ygoprodeck";
+import { getCardImageUrl } from "@/lib/cardImages";
 import type { DeckData, DeckEntry, SearchFilters, YgoCard } from "@/types/yugioh";
 
 interface Props {

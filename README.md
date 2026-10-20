@@ -9,7 +9,7 @@ A professional Yu-Gi-Oh! deck building and testing platform.
 - **Tailwind CSS** (dark mode, custom design system)
 - **PostgreSQL** via **Prisma**
 - **NextAuth v4** (credentials-based authentication)
-- **YGOPRODeck API** (card data and images)
+- **YGOPRODeck API** (card data, kept as a local copy; see [Card data and images](#card-data-and-images))
 - **Framer Motion, Recharts, Radix UI**
 
 ## Prerequisites
@@ -45,6 +45,19 @@ NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your-secret-here"   # generate: openssl rand -base64 32
 ```
 
+Optional:
+
+```env
+# Where card pictures come from. Defaults to /millenniumarena/img (Millennium Arena's copies on the same site),
+# which doesn't exist on localhost, so for local development point it at the live site:
+NEXT_PUBLIC_CARD_IMAGES="https://daniyalzia.co.uk/millenniumarena/img"
+
+# Where the downloaded card data is kept. Defaults to data/ in the project folder (gitignored).
+CARD_DATA_DIR="/path/to/card-data"
+```
+
+`NEXT_PUBLIC_CARD_IMAGES` is built into the pages, so set it before `npm run dev` / `npm run build`.
+
 ### 3. Create database and push schema
 
 ```bash
@@ -74,6 +87,14 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run db:migrate` | Create and run migrations |
 | `npm run db:studio` | Open Prisma Studio GUI |
 
+## Checks
+
+| Command | Description |
+|---------|-------------|
+| `npm test` | Unit tests (card search, card data download/refresh, image links, the YGOPRODeck queue); no database needed |
+| `npm run typecheck` | TypeScript check |
+| `npm run build` | Production build (also type-checks) |
+
 ## Project Structure
 
 ```
@@ -85,14 +106,19 @@ src/
 │   └── page.tsx         # Landing page
 ├── components/
 │   ├── ui/              # Button, Input, Modal, Badge, etc.
-│   ├── layout/          # Navbar, AppShell
+│   ├── layout/          # Navbar, AppShell, SiteFooter
 │   ├── cards/           # CardImage, CardGrid, CardFilters, CardTooltip
 │   └── deck/            # DeckZone component
 ├── hooks/               # useDeck, useHandTest
-├── lib/                 # db, auth, ygoprodeck, probability, utils
+├── lib/                 # db, auth, probability, utils, and the card data:
+│                        #   ygoprodeck (what the app calls), cardData (local copy), cardIndex (search),
+│                        #   cardImages (picture links), ygoApi (YGOPRODeck calls); *.test.ts next to them
 └── types/               # yugioh.ts
 prisma/
 └── schema.prisma
+test/
+└── register.mjs         # lets node --test run the TypeScript sources
+data/                    # downloaded card data (gitignored, created on first run)
 ```
 
 ## Features
@@ -102,7 +128,7 @@ prisma/
 - **Goldfish Mode** — Move cards freely between deck/hand/field/graveyard/banished zones
 - **Analytics** — Type ratios, attribute breakdown, level distribution, archetype analysis, full deck statistics
 - **Probability Calculator** — Hypergeometric distribution for single-card and multi-piece combo probabilities
-- **Authentication** — Register/login/logout with bcrypt-hashed passwords
+- **Authentication** — Register/login/logout with bcrypt-hashed passwords. Accounts are shared with Millennium Arena, and are deleted from its Settings page (the Profile page links there)
 
 ## Deployment
 
@@ -120,9 +146,33 @@ npm run build
 npm start
 ```
 
-## Adding Cards to Cache
+## Card data and images
 
-Cards are fetched live from YGOPRODeck API and cached at the Next.js fetch layer (1-hour TTL). No manual seeding needed.
+YGOPRODeck's API guide asks sites to keep their own copy of the card data instead of calling the API on every
+request, and not to hotlink its images. So:
+
+- **Card data**: on first start the server downloads the whole database in one request (`cardinfo.php`, ~3 MB
+  compressed) plus `archetypes.php`, cuts it down to the fields DeckForge uses, and saves it to `data/cards.json`
+  (about 7.5 MB) and memory. Searches, deck pages, card lookups and the archetype list all run against that copy.
+  Once a day it asks `checkDBVer.php` whether YGOPRODeck has a newer version and downloads again only if so. If
+  there's no copy yet (the first download failed), it falls back to the live API, through the same rate-limited
+  queue, and tries the download again later. Code: `src/lib/cardData.ts`, `src/lib/cardIndex.ts`.
+- **Images**: pictures come from Millennium Arena's re-hosted copies on the same site, not from
+  `images.ygoprodeck.com`: `/millenniumarena/img/cards/<id>.jpg` (full), `/millenniumarena/img/small/<id>.jpg` and
+  `/millenniumarena/img/cropped/<id>.jpg` (art crop), named by passcode like YGOPRODeck's. They're outside
+  DeckForge's `/deckforge` basePath, so next/image optimisation is turned off. Code: `src/lib/cardImages.ts`.
+
+No manual seeding needed. To force a fresh download, stop the server, delete `data/`, and start it again.
+
+## Credits and notices
+
+Card data and images from [YGOPRODeck](https://ygoprodeck.com).
+
+Yu-Gi-Oh! is a trademark of Konami Digital Entertainment. Card names, text and artwork © Studio Dice/SHUEISHA,
+TV TOKYO, KONAMI. This is an unofficial fan project, not affiliated with or endorsed by Konami.
+
+The site's [Terms](https://daniyalzia.co.uk/terms) and [Privacy Policy](https://daniyalzia.co.uk/privacy) cover
+DeckForge too.
 
 ## Future Roadmap
 

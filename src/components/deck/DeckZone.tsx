@@ -3,7 +3,7 @@
 import { Minus, Plus } from "lucide-react";
 import Image from "next/image";
 import { cn, getFrameColorHex } from "@/lib/utils";
-import { getCardImageUrl } from "@/lib/ygoprodeck";
+import { getCardImageUrl } from "@/lib/cardImages";
 import { CardTooltip } from "@/components/cards/CardTooltip";
 import type { YgoCard, DeckEntry, DeckZone as DeckZoneType } from "@/types/yugioh";
 
