@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getCardsByIds } from "@/lib/ygoprodeck";
+import { getDeckCardData } from "@/lib/deckCards";
 import { DeckBuilderClient } from "./DeckBuilderClient";
 import type { Metadata } from "next";
 
@@ -27,7 +27,7 @@ export default async function DeckBuilderPage({ params }: Props) {
   if (deck.userId !== session!.user.id) redirect("/dashboard");
 
   const cardIds = [...new Set(deck.cards.map((c) => c.cardId))];
-  const cardData = cardIds.length > 0 ? await getCardsByIds(cardIds) : [];
+  const cardData = await getDeckCardData(cardIds, session!.user.id);
   const cardMap = Object.fromEntries(cardData.map((c) => [c.id, c]));
 
   return (

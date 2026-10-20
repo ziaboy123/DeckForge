@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Swords, Eye, EyeOff, Layers, Shuffle, Zap, BarChart3, Shield } from "lucide-react";
 import { toast } from "sonner";
+import { TOO_MANY_ATTEMPTS } from "@/lib/rateLimit";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
@@ -44,7 +45,11 @@ export default function HomePage() {
     });
 
     if (result?.error) {
-      toast.error("Invalid email or password");
+      toast.error(
+        result.error === TOO_MANY_ATTEMPTS
+          ? "Too many sign-in attempts. Wait a few minutes and try again."
+          : "Invalid email or password"
+      );
       return;
     }
 

@@ -1,29 +1,29 @@
 import { NextResponse } from "next/server";
-import { searchCards } from "@/lib/ygoprodeck";
-import type { SearchFilters, Attribute } from "@/types/yugioh";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { parseSearchParams } from "@/lib/cardSearch";
+import { cardLookupLimit } from "@/lib/cardLimits";
+import { UpstreamBusyError, searchCards } from "@/lib/ygoprodeck";
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
+  // only the deck builder uses this, so it's for signed-in users only
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized", data: [] }, { status: 401 });
 
-  const filters: SearchFilters = {
-    name: searchParams.get("name") ?? undefined,
-    type: searchParams.get("type") ?? undefined,
-    race: searchParams.get("race") ?? undefined,
-    attribute: (searchParams.get("attribute") as Attribute) ?? undefined,
-    level: searchParams.get("level") ? Number(searchParams.get("level")) : undefined,
-    archetype: searchParams.get("archetype") ?? undefined,
-    banlist: (searchParams.get("banlist") as SearchFilters["banlist"]) ?? undefined,
-    frameType: (searchParams.get("frameType") as SearchFilters["frameType"]) ?? undefined,
-    sort: (searchParams.get("sort") as SearchFilters["sort"]) ?? "name",
-    num: searchParams.get("num") ? Number(searchParams.get("num")) : 60,
-    offset: searchParams.get("offset") ? Number(searchParams.get("offset")) : 0,
-  };
+  const limited = cardLookupLimit(req, session.user.id, { data: [] });
+  if (limited) return limited;
+
+  const parsed = parseSearchParams(new URL(req.url).searchParams);
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error, data: [] }, { status: 400 });
 
   try {
-    const result = await searchCards(filters);
+    const result = await searchCards(parsed.filters);
     return NextResponse.json(result);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to search cards";
-    return NextResponse.json({ error: message, data: [] }, { status: 200 });
+    if (err instanceof UpstreamBusyError) {
+      return NextResponse.json({ error: "Card search is busy. Try again in a moment.", data: [] }, { status: 503, headers: { "Retry-After": "2" } });
+    }
+    console.error("[cards/search]", err instanceof Error ? err.message : err);
+    return NextResponse.json({ error: "Card search isn't working right now. Try again later.", data: [] }, { status: 502 });
   }
 }

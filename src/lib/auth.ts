@@ -2,6 +2,16 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "node:crypto";
+import { RateLimiter, TOO_MANY_ATTEMPTS, clientIp, shared } from "@/lib/rateLimit";
+
+// Sign-in limits (accounts are shared with Millennium Arena, so guessing here would work there too).
+// Every try counts against the visitor (each one costs a bcrypt run) and against the email; signing in clears the email's count.
+const signInTriesPerIp = shared("signInTriesPerIp", () => new RateLimiter(20, 15 * 60_000));
+const signInTriesPerEmail = shared("signInTriesPerEmail", () => new RateLimiter(8, 15 * 60_000));
+
+// checked against when an email has no account, so a wrong email takes as long as a wrong password (cost 12, like real ones)
+const DUMMY_HASH = bcrypt.hash(randomUUID(), 12);
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -26,17 +36,25 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) return null;
+        const email = String(credentials.email).toLowerCase();
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase() },
+        // throwing (rather than returning null) sends this code back to the login form
+        if (!signInTriesPerIp.hit(clientIp(req?.headers)).ok) throw new Error(TOO_MANY_ATTEMPTS);
+        if (email.length > 254) return null;
+        if (!signInTriesPerEmail.hit(email).ok) throw new Error(TOO_MANY_ATTEMPTS);
+
+        const user = await prisma.user.findUnique({ where: { email } }).catch((err) => {
+          // a thrown message goes back to the browser, so keep database details in the log
+          console.error("[auth] user lookup failed:", err instanceof Error ? err.message : err);
+          throw new Error("SignInUnavailable");
         });
 
-        if (!user || !user.password) return null;
-
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isValid) return null;
+        // same bcrypt work and same answer whether the email or the password was wrong
+        const isValid = await bcrypt.compare(String(credentials.password), user?.password ?? (await DUMMY_HASH));
+        if (!user?.password || !isValid) return null;
+        signInTriesPerEmail.reset(email);
 
         return {
           id: user.id,

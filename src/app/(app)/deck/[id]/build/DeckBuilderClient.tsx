@@ -167,12 +167,19 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const searchEnabled = searchQuery.length >= 2 || Object.values(filters).some(Boolean);
+  // wait for a pause in typing, so each keystroke isn't its own search (searches are rate limited)
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  const searchEnabled = debouncedQuery.length >= 2 || Object.values(filters).some(Boolean);
   const { data: searchData, isFetching } = useQuery({
-    queryKey: ["card-search", searchQuery, filters],
+    queryKey: ["card-search", debouncedQuery, filters],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (searchQuery) params.set("name", searchQuery);
+      if (debouncedQuery) params.set("name", debouncedQuery);
       if (filters.type) params.set("type", filters.type);
       if (filters.race) params.set("race", filters.race);
       if (filters.attribute) params.set("attribute", filters.attribute);
@@ -183,6 +190,7 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
       params.set("num", "60");
       const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/cards/search?${params}`);
       const json = await res.json();
+      if (!res.ok) toast.error(json.error ?? "Card search failed", { id: "card-search" });
       return (json.data as YgoCard[]) ?? [];
     },
     enabled: searchEnabled,
@@ -261,7 +269,16 @@ export function DeckBuilderClient({ deck, initialCardData }: Props) {
       const fetchedCards: YgoCard[] = [];
       for (const { cardName, quantity, zone } of parsed) {
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/cards/search?name=${encodeURIComponent(cardName)}&num=1`);
+          const url = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/cards/search?name=${encodeURIComponent(cardName)}&num=1`;
+          let res = await fetch(url);
+          // searches are rate limited, so if a big list hits the limit, wait it out and carry on
+          for (let tries = 0; (res.status === 429 || res.status === 503) && tries < 2; tries++) {
+            const wait = Math.min(Number(res.headers.get("Retry-After")) || 2, 60);
+            toast.loading(`Looking up cards… (waiting ${wait}s for the search limit)`, { id: "import" });
+            await new Promise((r) => setTimeout(r, wait * 1000));
+            toast.loading("Looking up cards…", { id: "import" });
+            res = await fetch(url);
+          }
           const json = await res.json();
           if (json.data?.length > 0) {
             fetchedCards.push({ ...json.data[0], _importQuantity: quantity, _importZone: zone });
