@@ -199,7 +199,7 @@ export function ProfileClient({ user, deckCount }: Props) {
       {/* Delete account */}
       <section className="border border-red-900/40 rounded-xl p-5 space-y-3">
         <h2 className="flex items-center gap-2 text-base font-semibold text-primary">
-          <Trash2 className="w-4 h-4 text-red-400" />
+          <Trash2 className="w-4 h-4 text-red-400" aria-hidden="true" />
           Delete your account
         </h2>
         <p className="text-sm text-secondary leading-relaxed">
@@ -210,13 +210,19 @@ export function ProfileClient({ user, deckCount }: Props) {
         <p className="text-sm text-secondary leading-relaxed">
           Deleting it there removes your account everywhere, including all your DeckForge decks
           ({deckCount} {deckCount === 1 ? "deck" : "decks"}). It can&apos;t be undone. The{" "}
-          <a href={PRIVACY_URL} className="text-brand-gold hover:underline">Privacy Policy</a> explains what happens to
+          <a href={PRIVACY_URL} className="text-brand-gold underline underline-offset-2">Privacy Policy</a> explains what happens to
           your data.
         </p>
-        <Button variant="danger-ghost" size="sm" asChild className="border border-red-900/50">
+        {/* allowed to wrap: on a phone the label is wider than the box */}
+        <Button
+          variant="danger-ghost"
+          size="sm"
+          asChild
+          className="border border-red-900/50 h-auto min-h-8 py-1.5 whitespace-normal text-left"
+        >
           <a href={DELETE_ACCOUNT_URL}>
             Delete account in Millennium Arena Settings
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
           </a>
         </Button>
       </section>

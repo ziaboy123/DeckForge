@@ -172,11 +172,11 @@ export default function RegisterPage() {
               Create account
             </Button>
             {/* the Terms and Privacy Policy are at the domain root, outside the basePath: plain <a>, not next/link */}
-            <p className="text-xs text-muted text-center leading-relaxed">
+            <p className="text-xs text-secondary text-center leading-relaxed">
               By creating an account you agree to the{" "}
-              <a href={TERMS_URL} className="text-brand-gold hover:underline">Terms</a>
+              <a href={TERMS_URL} className="text-brand-gold underline underline-offset-2">Terms</a>
               {" "}and confirm you&apos;re 13 or older. See the{" "}
-              <a href={PRIVACY_URL} className="text-brand-gold hover:underline">Privacy Policy</a>.
+              <a href={PRIVACY_URL} className="text-brand-gold underline underline-offset-2">Privacy Policy</a>.
             </p>
           </form>
 
