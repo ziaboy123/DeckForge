@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
+import { MAX_CARDS_PER_ZONE, MAX_COPIES } from "@/lib/deckLimits";
+
+const ZONE_NAMES = { MAIN: "Main Deck", EXTRA: "Extra Deck", SIDE: "Side Deck" } as const;
 
 const updateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -12,12 +15,31 @@ const updateSchema = z.object({
   cards: z
     .array(
       z.object({
-        cardId: z.number().int().positive(),
+        // card ids are 8-9 digits; bigger numbers don't fit the database column
+        cardId: z.number().int().positive().max(999_999_999),
         zone: z.enum(["MAIN", "EXTRA", "SIDE"]),
-        quantity: z.number().int().min(1).max(3),
-        sortOrder: z.number().int().optional(),
+        quantity: z.number().int().min(1).max(MAX_COPIES),
+        sortOrder: z.number().int().min(0).max(10_000).optional(),
       })
     )
+    .max(MAX_CARDS_PER_ZONE * 3, "That deck has too many cards")
+    // the same card can be sent as several entries, so add them up per zone before checking the limits
+    .superRefine((cards, ctx) => {
+      const perZone = new Map<string, number>();
+      const perCard = new Map<string, number>();
+      for (const c of cards) {
+        perZone.set(c.zone, (perZone.get(c.zone) ?? 0) + c.quantity);
+        perCard.set(`${c.zone}:${c.cardId}`, (perCard.get(`${c.zone}:${c.cardId}`) ?? 0) + c.quantity);
+      }
+      for (const [zone, total] of perZone) {
+        if (total > MAX_CARDS_PER_ZONE) {
+          ctx.addIssue({ code: "custom", message: `The ${ZONE_NAMES[zone as keyof typeof ZONE_NAMES]} can't hold more than ${MAX_CARDS_PER_ZONE} cards` });
+        }
+      }
+      if ([...perCard.values()].some((n) => n > MAX_COPIES)) {
+        ctx.addIssue({ code: "custom", message: `A deck can only have ${MAX_COPIES} copies of a card` });
+      }
+    })
     .optional(),
 });
 

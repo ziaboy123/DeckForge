@@ -9,6 +9,7 @@ import { User, Layers, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { PASSWORD_TOO_LONG, passwordFits } from "@/lib/password";
 
 interface Props {
   user: { id: string; name: string; email: string; memberSince: string };
@@ -23,7 +24,7 @@ type ProfileForm = z.infer<typeof profileSchema>;
 const passwordSchema = z
   .object({
     currentPassword: z.string().min(1, "Current password is required"),
-    newPassword: z.string().min(8, "Must be at least 8 characters"),
+    newPassword: z.string().min(8, "Must be at least 8 characters").refine(passwordFits, PASSWORD_TOO_LONG),
     confirmPassword: z.string(),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {

@@ -11,6 +11,7 @@ import { Swords, Eye, EyeOff, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { PASSWORD_TOO_LONG, passwordFits } from "@/lib/password";
 
 const schema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -19,7 +20,8 @@ const schema = z.object({
     .string()
     .min(8, "Password must be at least 8 characters")
     .regex(/[A-Z]/, "Include at least one uppercase letter")
-    .regex(/[0-9]/, "Include at least one number"),
+    .regex(/[0-9]/, "Include at least one number")
+    .refine(passwordFits, PASSWORD_TOO_LONG),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -122,8 +124,9 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="text-muted hover:text-secondary transition-colors"
-                    tabIndex={-1}
+                    className="rounded text-muted hover:text-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
+                    aria-label="Show password"
+                    aria-pressed={showPassword}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>

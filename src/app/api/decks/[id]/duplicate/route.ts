@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
+import { DECK_LIMIT_REACHED, deckLimitReached } from "@/lib/deckLimits";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
@@ -15,10 +16,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   if (!source) return NextResponse.json({ error: "Deck not found" }, { status: 404 });
   if (source.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (await deckLimitReached(session.user.id)) return NextResponse.json({ error: DECK_LIMIT_REACHED }, { status: 400 });
 
   const copy = await prisma.deck.create({
     data: {
-      name: `${source.name} (Copy)`,
+      // names max out at 100 characters, so a copy of a copy of a copy can't keep growing past that
+      name: `${source.name.slice(0, 100 - " (Copy)".length)} (Copy)`,
       description: source.description,
       format: source.format,
       userId: session.user.id,

@@ -4,10 +4,11 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
+import { PASSWORD_TOO_LONG, passwordFits } from "@/lib/password";
 
 const schema = z.object({
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(8),
+  newPassword: z.string().min(8).refine(passwordFits, PASSWORD_TOO_LONG),
 });
 
 export async function PATCH(req: Request) {

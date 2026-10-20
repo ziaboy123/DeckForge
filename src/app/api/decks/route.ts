@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
+import { DECK_LIMIT_REACHED, deckLimitReached } from "@/lib/deckLimits";
 
 const createSchema = z.object({
   name: z.string().min(1).max(100),
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const data = createSchema.parse(body);
+    if (await deckLimitReached(session.user.id)) return NextResponse.json({ error: DECK_LIMIT_REACHED }, { status: 400 });
 
     const deck = await prisma.deck.create({
       data: {

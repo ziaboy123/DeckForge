@@ -103,8 +103,9 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="text-muted hover:text-secondary transition-colors"
-                    tabIndex={-1}
+                    className="rounded text-muted hover:text-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
+                    aria-label="Show password"
+                    aria-pressed={showPassword}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>

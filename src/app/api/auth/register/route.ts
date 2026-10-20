@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { RateLimiter, clientIp, tooManyRequests } from "@/lib/rateLimit";
+import { PASSWORD_TOO_LONG, passwordFits } from "@/lib/password";
 
 // Per-visitor sign-up limits: a cap on tries (each one can tell whether an email has an account) and on new accounts.
 // Hiding that completely would need email verification: without it, a sign-up that works shows the email was free.
@@ -12,7 +13,7 @@ const signUpsPerIp = new RateLimiter(5, 60 * 60_000);
 const registerSchema = z.object({
   name: z.string().min(2).max(50),
   email: z.string().email(),
-  password: z.string().min(8).max(72),
+  password: z.string().min(8).refine(passwordFits, PASSWORD_TOO_LONG),
 });
 
 export async function POST(req: Request) {

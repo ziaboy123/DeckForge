@@ -16,6 +16,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function HandTesterPage({ params }: Props) {
   const session = await getServerSession(authOptions);
+  // pages render alongside the layout, so its sign-in redirect doesn't stop this from running: check here too
+  // (a signed-out visitor or a login ended by a password change has no session)
+  if (!session) redirect("/login");
   const { id } = await params;
 
   const deck = await prisma.deck.findUnique({
@@ -24,10 +27,10 @@ export default async function HandTesterPage({ params }: Props) {
   });
 
   if (!deck) notFound();
-  if (deck.userId !== session!.user.id) redirect("/dashboard");
+  if (deck.userId !== session.user.id) redirect("/dashboard");
 
   const cardIds = [...new Set(deck.cards.map((c) => c.cardId))];
-  const cardData = await getDeckCardData(cardIds, session!.user.id);
+  const cardData = await getDeckCardData(cardIds, session.user.id);
   const cardMap = Object.fromEntries(cardData.map((c) => [c.id, c]));
 
   return (
