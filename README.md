@@ -14,15 +14,16 @@ A professional Yu-Gi-Oh! deck building and testing platform.
 
 ## Prerequisites
 
-- Node.js 18+
-- PostgreSQL (local or cloud)
+- Node.js 20.9+ (the minimum for Next.js 16)
+- A PostgreSQL database
 
 ## Quick Start
 
 ### 1. Clone and install
 
 ```bash
-cd "C:\Programming\DeckForge"
+git clone https://github.com/ziaboy123/DeckForge.git
+cd DeckForge
 npm install
 ```
 
@@ -77,7 +78,7 @@ npm run db:studio
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000/deckforge](http://localhost:3000/deckforge). The app lives under `/deckforge` (`basePath` in `next.config.ts`), the same as on the live site.
 
 ## Database Commands
 
@@ -132,19 +133,12 @@ data/                    # downloaded card data (gitignored, created on first ru
 
 ## Deployment
 
-### Vercel (recommended)
+The live site ([daniyalzia.co.uk/deckforge](https://daniyalzia.co.uk/deckforge)) runs on a self-hosted Linux server, not Vercel:
 
-1. Push to GitHub
-2. Import project in Vercel
-3. Set environment variables in Vercel dashboard
-4. Deploy
+- a systemd service runs `next start` as its own unprivileged user, listening only on localhost, behind nginx (which passes `/deckforge` through)
+- a deploy pulls the latest commit, then runs `npx prisma db push --skip-generate` (schema first: it refuses any change that would lose data), `npm install`, `npm run build`, and restarts the service
 
-### Manual (Node.js server)
-
-```bash
-npm run build
-npm start
-```
+To run it somewhere else, set the environment variables above and use `npm run build` then `npm start` on Node 20.9+.
 
 ## Card data and images
 
