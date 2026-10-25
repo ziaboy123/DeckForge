@@ -174,6 +174,14 @@ TV TOKYO, KONAMI. This is an unofficial fan project, not affiliated with or endo
 The site's [Terms](https://daniyalzia.co.uk/terms) and [Privacy Policy](https://daniyalzia.co.uk/privacy) cover
 DeckForge too.
 
+## Licence
+
+DeckForge's own code is under the MIT licence, see [LICENSE](LICENSE). That doesn't cover Yu-Gi-Oh! itself: the
+card names, game terms and the few short card texts in the code and tests belong to Konami and its licensors (see
+[Credits and notices](#credits-and-notices)). The card data and images aren't in this repo either. The server
+downloads the card data from YGOPRODeck when it runs, and the images come from Millennium Arena's copies (see
+[Card data and images](#card-data-and-images)).
+
 ## Future Roadmap
 
 - Public deck sharing and browsing
